@@ -5,6 +5,10 @@
         "uart.h": "c",
         "gpio.h": "c",
         "adc_oneshot.h": "c",
-        "string.h": "c"
+        "string.h": "c",
+        "cstdint": "c",
+        "esp_intr_alloc.h": "c",
+        "uartif.h": "c",
+        "stdint.h": "c"
     }
 }
