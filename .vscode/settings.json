@@ -1,0 +1,10 @@
+{
+    "files.associations": {
+        "*.c": "c",
+        "freertos.h": "c",
+        "uart.h": "c",
+        "gpio.h": "c",
+        "adc_oneshot.h": "c",
+        "string.h": "c"
+    }
+}

@@ -1,3 +1,5 @@
+#include "main.h"
+
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
@@ -7,7 +9,6 @@
 #include "driver/gpio.h"
 #include "driver/uart.h"
 #include "esp_adc/adc_oneshot.h"
-
 
 #define BLINK_GPIO GPIO_NUM_21 // GPIO_NUM_2
 #define DHT_GPIO GPIO_NUM_23
