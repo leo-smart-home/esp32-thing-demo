@@ -16,38 +16,34 @@
 
 void app_main(void)
 {
-    const gpioif_pin_config_t pin_config[2u] = 
-    {
-        {PIN_BUTTON, GPIO_MODE_INPUT },
-        {PIN_LED,    GPIO_MODE_OUTPUT}
-    };
+    const gpioif_pin_config_t pin_config[2u] =
+        {
+            {PIN_BUTTON, GPIO_MODE_INPUT},
+            {PIN_LED, GPIO_MODE_OUTPUT}};
 
     initGPIO(pin_config, 2u);
     initUART(UART_DEBUG, UART_BAUD_RATE);
 
-    xTaskCreate(&taskPrintButtonState, "button_task", TASK_STACK_SIZE, NULL, 5u, NULL);
-    xTaskCreate(&taskBlinkLed, "blink_task", TASK_STACK_SIZE, NULL, 1u, NULL);
+    xTaskCreate(&taskPrintHelloWorld, "hello_world_task", TASK_STACK_SIZE, NULL, 5u, NULL);
+    xTaskCreate(&taskButtonControl, "button_led_task", TASK_STACK_SIZE, NULL, 1u, NULL);
 }
 
-static void taskPrintButtonState(void *pvParameter)
+static void taskPrintHelloWorld(void *pvParameter)
+{
+    while (true)
+    {
+        printf("Hello from ESP32\n");
+        vTaskDelay(pdMS_TO_TICKS(1000u));
+    }
+}
+
+static void taskButtonControl(void *pvParameter)
 {
     while (true)
     {
         uint8_t button_state = (uint8_t)gpio_get_level(PIN_BUTTON);
-        printf("Button state: %s\n", button_state == 0 ? "Pressed" : "Released");
-        vTaskDelay(pdMS_TO_TICKS(100u));
-    }
-}
-
-static void taskBlinkLed(void *pvParameter)
-{
-    while (true)
-    {
-        gpio_set_level(PIN_LED, 1u);
-        vTaskDelay(pdMS_TO_TICKS(1000u));
-        // vTaskDelay(1000u / portTICK_PERIOD_MS);
-        gpio_set_level(PIN_LED, 0u);
-        vTaskDelay(pdMS_TO_TICKS(1000u));
+        gpio_set_level(PIN_LED, button_state);
+        vTaskDelay(pdMS_TO_TICKS(50u));
     }
 }
 
