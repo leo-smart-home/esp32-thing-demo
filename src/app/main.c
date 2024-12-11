@@ -33,67 +33,84 @@ void app_main(void)
             // {PIN_LED_RED, GPIO_MODE_OUTPUT}
         };
 
-    initGPIO(pin_config, sizeof(pin_config) / sizeof(pin_config[0]));
-    initUART(UART_DEBUG, UART_BAUD_RATE);
+    init_gpio(pin_config, sizeof(pin_config) / sizeof(pin_config[0]));
+    init_uart(UART_DEBUG, UART_BAUD_RATE);
+    rgb_led_init();
 
     ledc_timer_config_t ledc_timer = {
-        .speed_mode = LEDC_HIGH_SPEED_MODE,
-        .duty_resolution = LEDC_TIMER_8_BIT,
         .timer_num = LEDC_TIMER_0,
-        .freq_hz = 1000u,
-        // .clk_cfg = LEDC_AUTO_CLK
+        .duty_resolution = LEDC_TIMER_8_BIT,
+        .freq_hz = 500u,
+        .speed_mode = LEDC_HIGH_SPEED_MODE,
+        .clk_cfg = LEDC_USE_APB_CLK
     };
     ledc_timer_config(&ledc_timer);
 
     ledc_channel_config_t ledc_channel_0 = {
-        .speed_mode = LEDC_HIGH_SPEED_MODE,
-        .channel = LEDC_CHANNEL_0,
         .timer_sel = LEDC_TIMER_0,
+        .channel = LEDC_CHANNEL_0,
+        .speed_mode = LEDC_HIGH_SPEED_MODE,
+        .intr_type = LEDC_INTR_DISABLE,
+        .gpio_num = PIN_LED_RED,
+        .duty = 0u,
+        .hpoint = 0u
+    };
+    ledc_channel_config(&ledc_channel_0);
+
+    ledc_channel_config_t ledc_channel_1 = {
+        .timer_sel = LEDC_TIMER_0,
+        .channel = LEDC_CHANNEL_1,
+        .speed_mode = LEDC_HIGH_SPEED_MODE,
         .intr_type = LEDC_INTR_DISABLE,
         .gpio_num = PIN_LED_GREEN,
         .duty = 0u,
         .hpoint = 0u
     };
-    ledc_channel_config(&ledc_channel_0);
-    
-    // ledc_channel_config_t ledc_channel_1 = {
-    //     .speed_mode = LEDC_HIGH_SPEED_MODE,
-    //     .channel = LEDC_CHANNEL_1,
-    //     .timer_sel = LEDC_TIMER_0,
-    //     .intr_type = LEDC_INTR_DISABLE,
-    //     .gpio_num = PIN_LED_GREEN,
-    //     .duty = 0u,
-    //     .hpoint = 0u
-    // };
-    // ledc_channel_config(&ledc_channel_1);
+    ledc_channel_config(&ledc_channel_1);
 
-    xTaskCreate(&taskEnableRgb, "rbg_led_task", TASK_STACK_SIZE, NULL, 1u, NULL);
-    // xTaskCreate(&taskPrintHelloWorld, "hello_world_task", TASK_STACK_SIZE, NULL, 5u, NULL);
-    // xTaskCreate(&taskButtonControl, "button_led_task", TASK_STACK_SIZE, NULL, 1u, NULL);
+    ledc_channel_config_t ledc_channel_2 = {
+        .speed_mode = LEDC_HIGH_SPEED_MODE,
+        .channel = LEDC_CHANNEL_2,
+        .timer_sel = LEDC_TIMER_0,
+        .intr_type = LEDC_INTR_DISABLE,
+        .gpio_num = PIN_LED_BLUE,
+        .duty = 0u,
+        .hpoint = 0u
+    };
+    ledc_channel_config(&ledc_channel_1);
+
+    xTaskCreate(&task_rgb, "rbg_led_task", TASK_STACK_SIZE, NULL, 1u, NULL);
+    // xTaskCreate(&task_hello_world, "hello_world_task", TASK_STACK_SIZE, NULL, 5u, NULL);
+    // xTaskCreate(&task_button_control, "button_led_task", TASK_STACK_SIZE, NULL, 1u, NULL);
 }
 
 
-static void taskEnableRgb(void *pvParameter)
+static void task_rgb(void *pvParameter)
 {
-    // NOTE: Common anode LED, i.e. 0 is full brightness, 255 is off
-    ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, 0);
+    // // NOTE: Common anode LED, i.e. 0 is full brightness, 255 is off
+    ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, 255);
+    ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1, 0);
+    ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_2, 0);
     ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0);
+    ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_1);
+    ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_2);
+    // rgb_led_set_color(255u, 0u, 0u);
     while (true)
     {
-        static uint8_t brightness = 0;
-        uint8_t button_state = (uint8_t)gpio_get_level(PIN_BUTTON);
-        if (button_state == 0u) // Active low
-        {
-            brightness += 10;
-            ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, brightness);
-            ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0);
-        }
+        // static uint8_t brightness = 0;
+        // uint8_t button_state = (uint8_t)gpio_get_level(PIN_BUTTON);
+        // if (button_state == 0u) // Active low
+        // {
+        //     brightness += 10;
+        //     ledc_set_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0, brightness);
+        //     ledc_update_duty(LEDC_HIGH_SPEED_MODE, LEDC_CHANNEL_0);
+        // }
         vTaskDelay(pdMS_TO_TICKS(100u));
     }
 }
 
 
-static void taskPrintHelloWorld(void *pvParameter)
+static void task_hello_world(void *pvParameter)
 {
     while (true)
     {
@@ -103,7 +120,7 @@ static void taskPrintHelloWorld(void *pvParameter)
     }
 }
 
-static void taskButtonControl(void *pvParameter)
+static void task_button_control(void *pvParameter)
 {
     while (true)
     {
@@ -113,7 +130,7 @@ static void taskButtonControl(void *pvParameter)
     }
 }
 
-static void initUART(uart_port_t uart_num, uint16_t baud_rate)
+static void init_uart(uart_port_t uart_num, uint16_t baud_rate)
 {
     uart_config_t uart_config = {
         .baud_rate = baud_rate,
@@ -125,7 +142,7 @@ static void initUART(uart_port_t uart_num, uint16_t baud_rate)
     uart_driver_install(uart_num, 1024, 0, 0, NULL, 0);
 }
 
-static void initGPIO(const gpioif_pin_config_t *pin_config, uint8_t pin_count)
+static void init_gpio(const gpioif_pin_config_t *pin_config, uint8_t pin_count)
 {
     for (uint8_t i = 0u; i < pin_count; i++)
     {

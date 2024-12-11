@@ -11,11 +11,11 @@ typedef struct gpioif_pin_config_t
     gpio_mode_t mode;
 } gpioif_pin_config_t;
 
-static void initGPIO(const gpioif_pin_config_t *pin_config, uint8_t pin_count);
-static void initUART(uart_port_t uart_num, uint16_t baud_rate);
+static void init_gpio(const gpioif_pin_config_t *pin_config, uint8_t pin_count);
+static void init_uart(uart_port_t uart_num, uint16_t baud_rate);
 
-static void taskEnableRgb(void *pvParameter);
-static void taskPrintHelloWorld(void *pvParameter);
-static void taskButtonControl(void *pvParameter);
+static void task_rgb(void *pvParameter);
+static void task_hello_world(void *pvParameter);
+static void task_button_control(void *pvParameter);
 
 #endif // MAIN_H
