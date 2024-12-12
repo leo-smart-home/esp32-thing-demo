@@ -29,7 +29,7 @@ void app_main(void)
 
 static void task_rgb(void *pvParameter)
 {
-    rgb_led_set_color(255u, 0u, 0u);
+    rgb_led_set_color(255u, 0u, 255u);
     while (true)
     {
         vTaskDelay(pdMS_TO_TICKS(100u));
