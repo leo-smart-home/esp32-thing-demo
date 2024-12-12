@@ -21,40 +21,39 @@
 #include "esp_log.h"           //log out put, do not use printf everywhere
 
 static void mqtt_event_handler(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
-{                                                   // here esp_mqtt_event_handle_t is a struct which receieves struct event from mqtt app start funtion
+{ // here esp_mqtt_event_handle_t is a struct which receieves struct event from mqtt app start funtion
     if (event_id == MQTT_EVENT_CONNECTED)
     {
-        printf("MQTT_EVENT_CONNECTED");
+        printf("MQTT_EVENT_CONNECTED\n");
         // esp_mqtt_client_subscribe(client, "your topic", 0);
-        printf("sent subscribe successful");
+        // printf("sent subscribe successful\n");
     }
     else if (event_id == MQTT_EVENT_DISCONNECTED)
     {
-        printf("MQTT_EVENT_DISCONNECTED");
+        printf("MQTT_EVENT_DISCONNECTED\n");
     }
     else if (event_id == MQTT_EVENT_SUBSCRIBED)
     {
-        printf("MQTT_EVENT_SUBSCRIBED");
+        printf("MQTT_EVENT_SUBSCRIBED\n");
     }
-    else if (event_id == MQTT_EVENT_UNSUBSCRIBED) 
+    else if (event_id == MQTT_EVENT_UNSUBSCRIBED)
     {
-        printf("MQTT_EVENT_UNSUBSCRIBED");
+        printf("MQTT_EVENT_UNSUBSCRIBED\n");
     }
     else if (event_id == MQTT_EVENT_DATA)
     {
-        printf("MQTT_EVENT_DATA");
+        printf("MQTT_EVENT_DATA\n");
     }
     else if (event_id == MQTT_EVENT_ERROR)
     {
-        printf("MQTT_EVENT_ERROR");
+        printf("MQTT_EVENT_ERROR\n");
     }
 }
 
 static void mqtt_initialize(void)
-{ 
-    const esp_mqtt_client_config_t mqtt_cfg = {
-    };
-    esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg); 
+{
+    const esp_mqtt_client_config_t mqtt_cfg = {};
+    esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
 
     esp_err_t err;
     err = esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, (esp_event_handler_t)mqtt_event_handler, client);
@@ -64,6 +63,15 @@ static void mqtt_initialize(void)
     err = esp_mqtt_client_start(client);
     printf("esp_mqtt_client_start: %x\n", err);
     printf("MQTT Initialized\n");
+
+
+    int msg_id;
+    msg_id = esp_mqtt_client_subscribe(client, "/leonid/hello/test", 0);
+    printf("sent subscribe successful, msg_id=%d\n", msg_id);
+
+    // Publish a message to a topic
+    msg_id = esp_mqtt_client_publish(client, "/eleonid/hello/test1", "Hello from ESP32", 0, 1, 0);
+    printf("sent publish successful, msg_id=%d\n", msg_id);
 }
 
 // !===============================================================================================
@@ -118,11 +126,9 @@ static void wifi_event_handler(void *event_handler_arg, esp_event_base_t event_b
 
 void wifi_connection()
 {
-    //                          s1.4
-    // 2 - Wi-Fi Configuration Phase
     esp_netif_init();
-    esp_event_loop_create_default();     // event loop                    s1.2
-    esp_netif_create_default_wifi_sta(); // WiFi station                      s1.3
+    esp_event_loop_create_default();
+    esp_netif_create_default_wifi_sta();
     wifi_init_config_t wifi_initiation = WIFI_INIT_CONFIG_DEFAULT();
     esp_wifi_init(&wifi_initiation); //
     esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, wifi_event_handler, NULL);
@@ -137,12 +143,9 @@ void wifi_connection()
     };
     strcpy((char *)wifi_configuration.sta.ssid, ssid);
     strcpy((char *)wifi_configuration.sta.password, pass);
-    // esp_log_write(ESP_LOG_INFO, "Kconfig", "SSID=%s, PASS=%s", ssid, pass);
     esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_configuration);
-    // 3 - Wi-Fi Start Phase
     esp_wifi_start();
     esp_wifi_set_mode(WIFI_MODE_STA);
-    // 4- Wi-Fi Connect Phase
     esp_wifi_connect();
     printf("wifi_init_softap finished. SSID:%s  password:%s", ssid, pass);
 }
