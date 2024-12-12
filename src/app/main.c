@@ -12,13 +12,11 @@
 #include "button.h"
 #include "rgb_led.h"
 
-#define UART_DEBUG UART_NUM_0
-#define UART_BAUD_RATE 9600u
 #define TASK_STACK_SIZE 2048u
 
 void app_main(void)
 {
-    init_uart(UART_DEBUG, UART_BAUD_RATE);
+    init_uart();
 
     button_init();
     rgb_led_init();
@@ -45,20 +43,20 @@ static void task_button_control(void *pvParameter)
     }
 }
 
-static void init_uart(uart_port_t uart_num, uint16_t baud_rate)
+static void init_uart()
 {
     uart_config_t uart_config = {
-        .baud_rate = baud_rate,
+        .baud_rate = UART_NUM_0,
         .data_bits = UART_DATA_8_BITS,
         .parity = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
         .flow_ctrl = UART_HW_FLOWCTRL_DISABLE};
-    uart_param_config(uart_num, &uart_config);
-    uart_driver_install(uart_num, 1024, 0, 0, NULL, 0);
+    uart_param_config(9600u, &uart_config);
+    uart_driver_install(UART_NUM_0, 1024, 0, 0, NULL, 0);
 }
 
 int _write(int file, char *ptr_data, int len)
 {
     (void)file; // Not used
-    return uart_write_bytes(UART_DEBUG, (char *)ptr_data, (size_t)len);
+    return uart_write_bytes(UART_NUM_0, (char *)ptr_data, (size_t)len);
 }

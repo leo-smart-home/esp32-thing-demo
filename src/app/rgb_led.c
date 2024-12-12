@@ -9,9 +9,9 @@
 #include "driver/gpio.h"
 #include "driver/ledc.h"
 
-#define RED_PIN GPIO_NUM_21
-#define GREEN_PIN GPIO_NUM_18
-#define BLUE_PIN GPIO_NUM_5
+#define RED_PIN     GPIO_NUM_21
+#define GREEN_PIN   GPIO_NUM_18
+#define BLUE_PIN    GPIO_NUM_5
 
 typedef struct map_pin_to_channel_t
 {
