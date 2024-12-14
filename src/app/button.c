@@ -11,8 +11,7 @@ void button_init(void)
     gpio_set_direction(BUTTON_PIN, GPIO_MODE_INPUT);
 }
 
-uint32_t button_get_state(void)
+button_state_e button_get_state(void)
 {
-    button_state_e state = (button_state_e)gpio_get_level(BUTTON_PIN);
-    return state;
+    return (button_state_e)gpio_get_level(BUTTON_PIN);
 }

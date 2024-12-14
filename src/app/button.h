@@ -14,6 +14,6 @@ typedef enum
 } button_state_e;
 
 void button_init(void);
-uint32_t button_get_state(void);
+button_state_e button_get_state(void);
 
 #endif // BUTTON_H
