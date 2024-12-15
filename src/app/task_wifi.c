@@ -9,12 +9,35 @@
 #include "esp_log.h"
 #include "esp_event.h"
 #include "nvs_flash.h"
+#include "nvs.h"
 #include "lwip/err.h"
 #include "lwip/sys.h"
 #include "driver/uart.h"
 
-const char *ssid = ""; // TODO: Secrets
-const char *pass = "";
+#define WIFI_SECRETS_NAMESPACE "wifi_storage"
+
+static void store_secret(const char *key, const char *value)
+{
+    nvs_handle_t handle;
+    esp_err_t err = nvs_open(WIFI_SECRETS_NAMESPACE, NVS_READWRITE, &handle);
+    if (err == ESP_OK)
+    {
+        nvs_set_str(handle, key, value);
+        nvs_commit(handle);
+        nvs_close(handle);
+    }
+}
+
+static void read_secret(const char *key, char *out_value, size_t max_len)
+{
+    nvs_handle_t handle;
+    esp_err_t err = nvs_open(WIFI_SECRETS_NAMESPACE, NVS_READONLY, &handle);
+    if (err == ESP_OK)
+    {
+        nvs_get_str(handle, key, out_value, &max_len);
+        nvs_close(handle);
+    }
+}
 
 static void mqtt_event_handler(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
@@ -45,6 +68,10 @@ static void mqtt_event_handler(void *event_handler_arg, esp_event_base_t event_b
 
 void task_wifi_init()
 {
+    char ssid[32u];
+    char pass[32u];
+    read_secret("ssid", ssid, 32u);
+    read_secret("pass", pass, 32u);
 
     esp_netif_init();
     esp_event_loop_create_default();
@@ -53,6 +80,7 @@ void task_wifi_init()
     esp_wifi_init(&wifi_initiation); //
     esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, mqtt_event_handler, NULL);
     esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, mqtt_event_handler, NULL);
+
     wifi_config_t wifi_configuration = {
         .sta = {
             .ssid = "",
@@ -69,4 +97,3 @@ void task_wifi_init()
     esp_wifi_connect();
     printf("WiFi init finished; SSID:%s  password:%s\n", ssid, pass);
 }
-
