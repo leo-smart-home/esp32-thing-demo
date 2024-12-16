@@ -7,11 +7,18 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 
+esp_mqtt_client_handle_t mqtt_client;
+
+// typedef struct
+// {
+//     const char *topic;
+//     mqtt_subscribe_handler_t handler;
+// } mqtt_sub_topic_to_handler_s;
+
 static void mqtt_event_handler(void *event_client, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
     if (event_id == MQTT_EVENT_CONNECTED)
     {
-        // ESP_LOGI("ESP", "MQTT_EVENT_CONNECTED\n");
         printf("[MQTT_EVENT_CONNECTED]\n");
         esp_mqtt_client_subscribe_single((esp_mqtt_client_handle_t)event_client, "/test", 0);
         // esp_mqtt_client_subscribe(client, "your topic", 0);
@@ -40,32 +47,34 @@ static void mqtt_event_handler(void *event_client, esp_event_base_t event_base, 
     }
 }
 
+void task_mqtt_publish_message(const char *topic, const char *message)
+{
+    esp_mqtt_client_publish(mqtt_client, topic, message, 0, 1, 0);
+}
 
+void task_mqtt_subscribe(const char *topic, mqtt_subscribe_handler_t handler)
+{
+    esp_mqtt_client_subscribe_single(mqtt_client, topic, 0);
+    printf("Subscribed to %s\n", topic);
+    (void)handler; // TODO: Map topic to handler; MB use topic ID
+}
 
 void task_mqtt_init(void)
 {
     const esp_mqtt_client_config_t mqtt_cfg = {
-        .broker.address.uri = "mqtt://broker.hivemq.com:1883",
-        // .broker.address.uri = "mqtt://192.168.88.210:1883",
+        // .broker.address.uri = "mqtt://broker.hivemq.com:1883",
+        .broker.address.uri = "mqtt://192.168.88.210:1883",
         .credentials.username = "",
         .credentials.authentication.password = "",
         .network.disable_auto_reconnect = false,
         .session.keepalive = 60,
     };
-    esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
+    mqtt_client = esp_mqtt_client_init(&mqtt_cfg);
 
     esp_err_t err;
-    err = esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, (esp_event_handler_t)mqtt_event_handler, client);
+    err = esp_mqtt_client_register_event(mqtt_client, ESP_EVENT_ANY_ID, (esp_event_handler_t)mqtt_event_handler, mqtt_client);
     printf("esp_mqtt_client_register_event: %x\n", err);
-    err = esp_mqtt_client_start(client);
+    err = esp_mqtt_client_start(mqtt_client);
     printf("esp_mqtt_client_start: %x\n", err);
     printf("MQTT Initialized\n");
-
-    // int msg_id;
-    // msg_id = esp_mqtt_client_subscribe(client, "/test_in", 0);
-    // printf("sent subscribe successful, msg_id=%d\n", msg_id);
-
-    // // Publish a message to a topic
-    // msg_id = esp_mqtt_client_publish(client, "/test_out", "Hello from ESP32", 0, 1, 0);
-    // printf("sent publish successful, msg_id=%d\n", msg_id);
 }

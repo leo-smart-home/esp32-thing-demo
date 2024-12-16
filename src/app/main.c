@@ -21,33 +21,28 @@ void app_main(void)
 {
     init_uart();
     nvs_flash_init();
-
     button_init();
     rgb_led_init();
-
-    xTaskCreate(&task_rgb, "rbg_led_task", TASK_STACK_SIZE, NULL, 1u, NULL);
-    // xTaskCreate(&task_button_control, "button_led_task", TASK_STACK_SIZE, NULL, 1u, NULL);
-
     task_wifi_init();
-    vTaskDelay(5000 / portTICK_PERIOD_MS);
+    vTaskDelay(5000 / portTICK_PERIOD_MS); // Wait for WiFi to init completely
     task_mqtt_init();
+
+    xTaskCreate(&task_publish_button_state, "publish_button_state", TASK_STACK_SIZE, NULL, 1u, NULL);
+    task_mqtt_subscribe("/test2", NULL);
 }
 
-static void task_rgb(void *pvParameter)
+static void task_publish_button_state(void *pvParameter)
 {
+    button_state_e button_state;
+    char message[32u];
+
     rgb_led_set_color(255u, 0u, 255u);
     while (true)
     {
-        vTaskDelay(pdMS_TO_TICKS(100u));
-    }
-}
-
-static void task_button_control(void *pvParameter)
-{
-    while (true)
-    {
-        printf("Button state: %d\n", (uint8_t)button_get_state());
-        vTaskDelay(pdMS_TO_TICKS(100u));
+        button_state = button_get_state();
+        snprintf(message, sizeof(message), "%s", (button_state == BUTTON_ACTIVE) ? "ACTIVE" : "INACTIVE");
+        task_mqtt_publish_message("/esp32/button_state", message);
+        vTaskDelay(pdMS_TO_TICKS(50u));
     }
 }
 

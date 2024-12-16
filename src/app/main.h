@@ -4,8 +4,6 @@
 #include "driver/uart.h"
 
 static void init_uart();
-
-static void task_rgb(void *pvParameter);
-static void task_button_control(void *pvParameter);
+static void task_publish_button_state(void *pvParameter);
 
 #endif // MAIN_H
