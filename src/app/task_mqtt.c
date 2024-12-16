@@ -7,48 +7,51 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 
-static void mqtt_event_handler(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
+static void mqtt_event_handler(void *event_client, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
     if (event_id == MQTT_EVENT_CONNECTED)
     {
         // ESP_LOGI("ESP", "MQTT_EVENT_CONNECTED\n");
-        printf("MQTT_EVENT_CONNECTED\n");
+        printf("[MQTT_EVENT_CONNECTED]\n");
+        esp_mqtt_client_subscribe_single((esp_mqtt_client_handle_t)event_client, "/test", 0);
         // esp_mqtt_client_subscribe(client, "your topic", 0);
-        // printf("sent subscribe successful\n");
+        printf("Subscribed to /test\n");
     }
     else if (event_id == MQTT_EVENT_DISCONNECTED)
     {
-        printf("MQTT_EVENT_DISCONNECTED\n");
+        printf("[MQTT_EVENT_DISCONNECTED]\n");
     }
     else if (event_id == MQTT_EVENT_SUBSCRIBED)
     {
-        printf("MQTT_EVENT_SUBSCRIBED\n");
+        printf("[MQTT_EVENT_SUBSCRIBED]\n");
     }
     else if (event_id == MQTT_EVENT_UNSUBSCRIBED)
     {
-        printf("MQTT_EVENT_UNSUBSCRIBED\n");
+        printf("[MQTT_EVENT_UNSUBSCRIBED]\n");
     }
     else if (event_id == MQTT_EVENT_DATA)
     {
-        printf("MQTT_EVENT_DATA\n");
+        esp_mqtt_event_t *event = (esp_mqtt_event_t *)event_data;
+        printf("[MQTT_EVENT_DATA] %.*s: %.*s\r\n", event->topic_len, event->topic, event->data_len, event->data);
     }
     else if (event_id == MQTT_EVENT_ERROR)
     {
-        printf("MQTT_EVENT_ERROR\n");
+        printf("[MQTT_EVENT_ERROR]\n");
     }
 }
+
+
 
 void task_mqtt_init(void)
 {
     const esp_mqtt_client_config_t mqtt_cfg = {
         .broker.address.uri = "mqtt://broker.hivemq.com:1883",
         // .broker.address.uri = "mqtt://192.168.88.210:1883",
-        .credentials = {
-            .username = "",
-            .authentication = {
-                .password = ""}},
-        .network = {.disable_auto_reconnect = false},
-        .session = {.keepalive = 60}};
+        .credentials.username = "",
+        .credentials.authentication.password = "",
+        .network.disable_auto_reconnect = false,
+        .session.keepalive = 60,
+    };
     esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
 
     esp_err_t err;
