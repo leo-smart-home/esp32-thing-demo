@@ -28,15 +28,15 @@ void app_main(void)
     task_mqtt_init();
 
     xTaskCreate(&task_publish_button_state, "publish_button_state", TASK_STACK_SIZE, NULL, 1u, NULL);
-    task_mqtt_subscribe("/test2", NULL);
+    // task_mqtt_subscribe("/test2", NULL);
 }
 
-static void task_publish_button_state(void *pvParameter)
+static void task_publish_button_state(void *arg)
 {
+    (void)arg; // Not used
     button_state_e button_state;
     char message[32u];
 
-    rgb_led_set_color(255u, 0u, 255u);
     while (true)
     {
         button_state = button_get_state();

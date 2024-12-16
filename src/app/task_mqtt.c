@@ -7,6 +7,8 @@
 #include "freertos/task.h"
 #include "esp_log.h"
 
+#include "rgb_led.h"
+
 esp_mqtt_client_handle_t mqtt_client;
 
 // typedef struct
@@ -40,6 +42,16 @@ static void mqtt_event_handler(void *event_client, esp_event_base_t event_base, 
     {
         esp_mqtt_event_t *event = (esp_mqtt_event_t *)event_data;
         printf("[MQTT_EVENT_DATA] %.*s: %.*s\r\n", event->topic_len, event->topic, event->data_len, event->data);
+        if (event->data_len >= 6) {
+            char hex_string[7] = {0};
+            strncpy(hex_string, event->data, 6);
+            uint8_t red, green, blue;
+            sscanf(hex_string, "%2hhx%2hhx%2hhx", &red, &green, &blue);
+            printf("Parsed RGB values: R=%d, G=%d, B=%d\n", red, green, blue);
+            rgb_led_set_color(red, green, blue);
+        } else {
+            printf("Invalid data length for RGB parsing\n");
+        }
     }
     else if (event_id == MQTT_EVENT_ERROR)
     {
