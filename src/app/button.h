@@ -11,9 +11,9 @@ typedef enum
 {
     BUTTON_ACTIVE = 0,
     BUTTON_INACTIVE = 1,
-} button_state_e;
+} button_state;
 
 void button_init(void);
-button_state_e button_get_state(void);
+button_state button_get_state(void);
 
 #endif // BUTTON_H

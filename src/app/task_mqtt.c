@@ -9,22 +9,55 @@
 
 #include "rgb_led.h"
 
-esp_mqtt_client_handle_t mqtt_client;
+static void event_handler(void *event_client, esp_event_base_t event_base, int32_t event_id, void *event_data);
+static void init_subscribers(void);
 
-// typedef struct
-// {
-//     const char *topic;
-//     mqtt_subscribe_handler_t handler;
-// } mqtt_sub_topic_to_handler_s;
+esp_mqtt_client_handle_t g_mqtt_client;
+mqtt_subs_config g_subs_config;
 
-static void mqtt_event_handler(void *event_client, esp_event_base_t event_base, int32_t event_id, void *event_data)
+void task_mqtt_init(mqtt_subs_config config)
+{
+    g_subs_config = config;
+    const esp_mqtt_client_config_t client_config =
+        {
+            .broker.address.uri = "mqtt://192.168.88.210:1883",
+            // .credentials.username = "",
+            // .credentials.authentication.password = "",
+            // .network.disable_auto_reconnect = false,
+            // .session.keepalive = 60,
+        };
+    g_mqtt_client = esp_mqtt_client_init(&client_config);
+
+    esp_mqtt_client_register_event(g_mqtt_client, ESP_EVENT_ANY_ID, (esp_event_handler_t)event_handler, g_mqtt_client);
+    esp_mqtt_client_start(g_mqtt_client);
+    printf("MQTT Initialized\n");
+}
+
+void task_mqtt_publish_message(const char *topic, const char *message)
+{
+    esp_mqtt_client_publish(g_mqtt_client, topic, message, 0, 1, 0);
+}
+
+/**
+ * NOTE:
+ * User should initialize subscriber in the `event_handler`, otherwise `MQTT_EVENT_SUBSCRIBED` is never called
+ * Best place to do it, is when MQTT client connected
+ */
+static void init_subscribers(void)
+{
+    for (uint8_t i = 0; i < g_subs_config.number_of_subscribers; i++)
+    {
+        esp_mqtt_client_subscribe_single(g_mqtt_client, g_subs_config.map[i].mqtt_topic, 1u);
+        printf("Subscribed to %s\n", g_subs_config.map[i].mqtt_topic);
+    }
+}
+
+static void event_handler(void *event_client, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
     if (event_id == MQTT_EVENT_CONNECTED)
     {
         printf("[MQTT_EVENT_CONNECTED]\n");
-        esp_mqtt_client_subscribe_single((esp_mqtt_client_handle_t)event_client, "/test", 0);
-        // esp_mqtt_client_subscribe(client, "your topic", 0);
-        printf("Subscribed to /test\n");
+        init_subscribers();
     }
     else if (event_id == MQTT_EVENT_DISCONNECTED)
     {
@@ -41,52 +74,22 @@ static void mqtt_event_handler(void *event_client, esp_event_base_t event_base, 
     else if (event_id == MQTT_EVENT_DATA)
     {
         esp_mqtt_event_t *event = (esp_mqtt_event_t *)event_data;
-        printf("[MQTT_EVENT_DATA] %.*s: %.*s\r\n", event->topic_len, event->topic, event->data_len, event->data);
-        if (event->data_len >= 6) {
-            char hex_string[7] = {0};
-            strncpy(hex_string, event->data, 6);
-            uint8_t red, green, blue;
-            sscanf(hex_string, "%2hhx%2hhx%2hhx", &red, &green, &blue);
-            printf("Parsed RGB values: R=%d, G=%d, B=%d\n", red, green, blue);
-            rgb_led_set_color(red, green, blue);
-        } else {
-            printf("Invalid data length for RGB parsing\n");
+        // printf("[MQTT_EVENT_DATA] %.*s: %.*s\r\n", event->topic_len, event->topic, event->data_len, event->data);
+        for (uint8_t i = 0; i < g_subs_config.number_of_subscribers; i++)
+        {
+            if (strncmp(event->topic, g_subs_config.map[i].mqtt_topic, event->topic_len) == 0u)
+            {
+                g_subs_config.map[i].callback(event->data, event->data_len);
+                break;
+            }
         }
     }
     else if (event_id == MQTT_EVENT_ERROR)
     {
         printf("[MQTT_EVENT_ERROR]\n");
     }
-}
-
-void task_mqtt_publish_message(const char *topic, const char *message)
-{
-    esp_mqtt_client_publish(mqtt_client, topic, message, 0, 1, 0);
-}
-
-void task_mqtt_subscribe(const char *topic, mqtt_subscribe_handler_t handler)
-{
-    esp_mqtt_client_subscribe_single(mqtt_client, topic, 0);
-    printf("Subscribed to %s\n", topic);
-    (void)handler; // TODO: Map topic to handler; MB use topic ID
-}
-
-void task_mqtt_init(void)
-{
-    const esp_mqtt_client_config_t mqtt_cfg = {
-        // .broker.address.uri = "mqtt://broker.hivemq.com:1883",
-        .broker.address.uri = "mqtt://192.168.88.210:1883",
-        .credentials.username = "",
-        .credentials.authentication.password = "",
-        .network.disable_auto_reconnect = false,
-        .session.keepalive = 60,
-    };
-    mqtt_client = esp_mqtt_client_init(&mqtt_cfg);
-
-    esp_err_t err;
-    err = esp_mqtt_client_register_event(mqtt_client, ESP_EVENT_ANY_ID, (esp_event_handler_t)mqtt_event_handler, mqtt_client);
-    printf("esp_mqtt_client_register_event: %x\n", err);
-    err = esp_mqtt_client_start(mqtt_client);
-    printf("esp_mqtt_client_start: %x\n", err);
-    printf("MQTT Initialized\n");
+    else if (event_id == MQTT_USER_EVENT)
+    {
+        printf("[MQTT_USER_EVENT]\n");
+    }
 }
