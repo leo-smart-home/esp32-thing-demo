@@ -14,6 +14,8 @@
 #include "lwip/sys.h"
 #include "driver/uart.h"
 
+#include "rgb_led.h"
+
 #define WIFI_SECRETS_NAMESPACE "wifi_storage"
 
 static void event_handler(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id, void *event_data);
@@ -55,20 +57,24 @@ static void event_handler(void *event_handler_arg, esp_event_base_t event_base, 
     if (event_id == WIFI_EVENT_STA_START)
     {
         printf("WIFI CONNECTING....\n");
+        RGB_LED_SET_COLOR_BLUE();
     }
     else if (event_id == WIFI_EVENT_STA_CONNECTED)
     {
         printf("WiFi CONNECTED\n");
+        RGB_LED_SET_COLOR_GREEN();
     }
     else if (event_id == WIFI_EVENT_STA_DISCONNECTED)
     {
         printf("WiFi LOST CONNECTION\n");
+        RGB_LED_SET_COLOR_YELLOW();
         if (retry_num < 5u)
         {
             esp_wifi_connect();
             retry_num++;
             printf("WiFI TRYING TO RECONNECT...\n");
         }
+        RGB_LED_SET_COLOR_RED();
     }
     else if (event_id == IP_EVENT_STA_GOT_IP)
     {

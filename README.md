@@ -5,3 +5,11 @@ Firmware functionality:
  3. Connect to the MQTT Broker (MQTT over TCP probabbly, to be considered)
  4. Publish to the MQTT telemetry data to the server
  5. Handle MQTT commands from another the server
+
+
+ Ubuntu 24.04
+
+sudo apt-get remove modemmanager
+sudo usermod -a -G dialout $USER
+sudo reboot
+

@@ -21,10 +21,10 @@ void task_mqtt_init(mqtt_subs_config config)
     const esp_mqtt_client_config_t client_config =
         {
             .broker.address.uri = "mqtt://192.168.88.210:1883",
-            // .credentials.username = "",
-            // .credentials.authentication.password = "",
-            // .network.disable_auto_reconnect = false,
-            // .session.keepalive = 60,
+            .credentials.username = "",
+            .credentials.authentication.password = "",
+            .network.disable_auto_reconnect = false,
+            .session.keepalive = 20,
         };
     g_mqtt_client = esp_mqtt_client_init(&client_config);
 
@@ -58,10 +58,12 @@ static void event_handler(void *event_client, esp_event_base_t event_base, int32
     {
         printf("[MQTT_EVENT_CONNECTED]\n");
         init_subscribers();
+        RGB_LED_SET_COLOR_GREEN();
     }
     else if (event_id == MQTT_EVENT_DISCONNECTED)
     {
         printf("[MQTT_EVENT_DISCONNECTED]\n");
+        RGB_LED_SET_COLOR_RED();
     }
     else if (event_id == MQTT_EVENT_SUBSCRIBED)
     {

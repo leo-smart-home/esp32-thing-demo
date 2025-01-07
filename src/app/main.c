@@ -19,10 +19,10 @@
 #define TASK_STACK_SIZE 2048u
 
 static void init_uart();
+
 static void set_rgb_color_callback(const char *data, uint32_t data_len);
-static void test_1_callback(const char *data, uint32_t data_len);
-static void test_2_callback(const char *data, uint32_t data_len);
-static void task_publish_button_state(void *pvParameter);
+static void task_publish_button_state(void *args);
+static void task_publish_ping(void *args);
 
 void app_main(void)
 {
@@ -31,20 +31,22 @@ void app_main(void)
     button_init();
     rgb_led_init();
     task_wifi_init();
-    vTaskDelay(5000u / portTICK_PERIOD_MS); // Wait for WiFi to init completely
+
+    vTaskDelay(pdMS_TO_TICKS(2500u));
+    RGB_LED_SET_COLOR_CYAN();
+    vTaskDelay(pdMS_TO_TICKS(2500u));
 
     mqtt_subs_config subs_config = 
     {
-        .number_of_subscribers = 3u,
+        .number_of_subscribers = 1u,
         .map = 
         {
-            {.mqtt_topic = "/test_1",               .callback = (subscriber_callback)test_1_callback       },
-            {.mqtt_topic = "/test_2",               .callback = (subscriber_callback)test_2_callback       },
             {.mqtt_topic = "/esp32/set_rgb_color",  .callback = (subscriber_callback)set_rgb_color_callback},
         }
     };
     task_mqtt_init(subs_config);
     xTaskCreate(&task_publish_button_state, "publish_button_state", TASK_STACK_SIZE, NULL, 1u, NULL);
+    xTaskCreate(&task_publish_ping, "publish_ping", TASK_STACK_SIZE, NULL, 1u, NULL);
 }
 
 static void task_publish_button_state(void *arg)
@@ -61,6 +63,18 @@ static void task_publish_button_state(void *arg)
         vTaskDelay(pdMS_TO_TICKS(100u));
     }
 }
+
+static void task_publish_ping(void *arg)
+{
+    (void)arg; // Not used
+
+    while (true)
+    {
+        task_mqtt_publish_message("/esp32/ping", "ping");
+        vTaskDelay(pdMS_TO_TICKS(100u));
+    }
+}
+
 
 static void set_rgb_color_callback(const char *data, uint32_t data_len)
 {
@@ -79,16 +93,6 @@ static void set_rgb_color_callback(const char *data, uint32_t data_len)
     uint8_t blue = rgb_color & 0xFFu;
 
     rgb_led_set_color(red, green, blue);
-}
-
-static void test_1_callback(const char *data, uint32_t data_len)
-{
-    printf("Test 1 callback\n");
-}
-
-static void test_2_callback(const char *data, uint32_t data_len)
-{
-    printf("Test 2 callback\n");
 }
 
 static void init_uart()
